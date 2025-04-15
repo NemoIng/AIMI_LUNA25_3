@@ -104,7 +104,7 @@ def train(
         size_px=config.SIZE_PX,
     )
 
-    device = torch.device("cuda:0") if torch.cuda.is_available() else "cpu"
+    device = torch.device("cuda:0") if config.CUDA else torch.device("cpu")
 
     if config.MODE == "2D":
         model = ResNet18().to(device)
