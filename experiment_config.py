@@ -5,7 +5,7 @@ class Configuration(object):
     def __init__(self) -> None:
 
         # Working directory
-        self.WORKDIR = Path("results/luna25-baseline-90%-2D")
+        self.WORKDIR = Path(".")
         self.RESOURCES = Path("resources")
         # Starting weights for the I3D model
         self.MODEL_RGB_I3D = (
@@ -32,7 +32,7 @@ class Configuration(object):
 
         # Training parameters
         self.SEED = 2025
-        self.NUM_WORKERS = 1
+        self.NUM_WORKERS = 2
         self.SIZE_MM = 50
         self.SIZE_PX = 64
         self.BATCH_SIZE = 32
@@ -43,7 +43,5 @@ class Configuration(object):
         self.PATCH_SIZE = [64, 128, 128]
         self.LEARNING_RATE = 1e-4
         self.WEIGHT_DECAY = 5e-4
-        self.CUDA = False
-
 
 config = Configuration()
