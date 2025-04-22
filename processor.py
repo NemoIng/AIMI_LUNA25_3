@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 from torchvision import models
 from models.model_3d import I3D
-from models.model_2d import ResNet18
+from models.model_2d import ResNet34
 import os
 import math
 import logging
@@ -36,10 +36,11 @@ class MalignancyProcessor:
         if not self.suppress_logs:
             logging.info("Initializing the deep learning system")
 
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if self.mode == "2D":
-            self.model_2d = ResNet18(weights=None).cuda()
+            self.model_2d = ResNet34(weights=None).to(device)
         elif self.mode == "3D":
-            self.model_3d = I3D(num_classes=1, pre_trained=False, input_channels=3).cuda()
+            self.model_3d = I3D(num_classes=1, pre_trained=False, input_channels=3).to(device)
 
         self.model_root = "/opt/app/resources/"
 
@@ -93,17 +94,18 @@ class MalignancyProcessor:
             nodules.append(patch)
 
         nodules = np.array(nodules)
-        nodules = torch.from_numpy(nodules).cuda()
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        nodules = torch.from_numpy(nodules).to(device)
 
-        ckpt = torch.load(
-            os.path.join(
-                self.model_root,
-                self.model_name,
-                "best_metric_model.pth",
-            )
-        )
+        ckpt = torch.load("/opt/app/model/best_metric_model.pth", map_location="cpu")
+
         model.load_state_dict(ckpt)
         model.eval()
+        
+        # Convert grayscale (1-channel) input to 3-channel if needed
+        if nodules.dim() == 4 and nodules.shape[1] == 1:
+            nodules = nodules.repeat(1, 3, 1, 1)
+
         logits = model(nodules)
         logits = logits.data.cpu().numpy()
 

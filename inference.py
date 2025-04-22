@@ -168,7 +168,7 @@ class NoduleProcessor:
         return results
 
 
-def run(mode="2D", model_name="LUNA25-baseline-2D"):
+def run(mode="2D", model_name="scp_folder_test"):
     # Read the inputs
     input_nodule_locations = load_json_file(
         location=INPUT_PATH / "nodule-locations.json",

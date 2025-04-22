@@ -1,10 +1,7 @@
 #!/usr/bin/env bash
-
-# Stop at first error
 set -e
-
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-DOCKER_IMAGE_TAG="luna25-baseline-3d-algorithm-open-development-phase"
+DOCKER_IMAGE_TAG="luna25-resnet34"
 
 # Check if an argument is provided
 if [ "$#" -eq 1 ]; then
@@ -55,11 +52,12 @@ docker volume create "$DOCKER_NOOP_VOLUME" > /dev/null
 docker run --rm \
     --platform=linux/amd64 \
     --network none \
-    --gpus all \
     --volume "$INPUT_DIR":/input:ro \
     --volume "$OUTPUT_DIR":/output \
     --volume "$DOCKER_NOOP_VOLUME":/tmp \
+    --volume "/mnt/c/Users/Manon/Src/AIMI/AIMI_LUNA25_3/results/scp_folder_test":/opt/app/model:ro \
     $DOCKER_IMAGE_TAG
+
 docker volume rm "$DOCKER_NOOP_VOLUME" > /dev/null
 
 # Ensure permissions are set correctly on the output

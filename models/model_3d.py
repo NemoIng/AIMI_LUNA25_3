@@ -522,15 +522,15 @@ def load_mixed(state_dict, name_pt, sess, name_tf, fix_typo=False):
 
 
 if __name__ == "__main__":
-
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = I3D(
         num_classes=1,
         input_channels=3,
         pre_trained=True,
         freeze_bn=True,
-    ).cuda()
+    ).to(device)
 
     for i in range(10):
-        x = torch.rand(1, 1, 64, 64, 64).cuda()
+        x = torch.rand(1, 1, 64, 64, 64).to(device)
         out = model(x)
         print(out.shape)
