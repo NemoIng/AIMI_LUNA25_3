@@ -28,7 +28,7 @@ class Configuration(object):
             self.EXPERIMENT_DIR.mkdir(parents=True)
             
         self.EXPERIMENT_NAME = "LUNA25-baseline"
-        self.MODE = "2D" # 2D or 3D
+        self.MODE = "3D" # 2D or 3D
 
         # Training parameters
         self.SEED = 2025
