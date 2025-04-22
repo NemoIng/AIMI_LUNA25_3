@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+#SBATCH --partition=csedu
+#SBATCH --account=csedui00041
+#SBATCH --mem=10G
+#SBATCH --cpus-per-task=1
+#SBATCH --time=6:00:00
+#SBATCH --output=./logs/exp-%j.out
+#SBATCH --error=./logs/exp-%j.err
+#SBATCH --mail-user=ningendaa
+#SBATCH --mail-type=END,FAIL
+
+# execute train CLI
+source venv/bin/activate
+python train.py

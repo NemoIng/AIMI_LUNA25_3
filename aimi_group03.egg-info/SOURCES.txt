@@ -1,0 +1,5 @@
+setup.py
+aimi_group03.egg-info/PKG-INFO
+aimi_group03.egg-info/SOURCES.txt
+aimi_group03.egg-info/dependency_links.txt
+aimi_group03.egg-info/top_level.txt
