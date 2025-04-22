@@ -1,7 +1,7 @@
 """
 Script for training a ResNet18 or I3D to classify a pulmonary nodule as benign or malignant.
 """
-from models.model_2d import ResNet18
+from models.model_2d import ResNet34
 from models.model_3d import I3D
 from dataloader import get_data_loader
 import logging
@@ -109,7 +109,7 @@ def train(
     )
 
     if config.MODE == "2D":
-        model = ResNet18().to(device)
+        model = ResNet34().to(device)
     elif config.MODE == "3D":
         model = I3D(
             num_classes=1,

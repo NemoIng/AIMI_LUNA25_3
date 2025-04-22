@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 #SBATCH --partition=csedu
 #SBATCH --account=csedui00041
+#SBATCH --gres=gpu:1
 #SBATCH --mem=10G
-#SBATCH --cpus-per-task=1
 #SBATCH --time=6:00:00
-#SBATCH --output=./logs/exp-%j.out
-#SBATCH --error=./logs/exp-%j.err
+#SBATCH --output=./logs/2d_%j.out
+#SBATCH --error=./logs/2d_%j.err
 #SBATCH --mail-user=ningendaa
 #SBATCH --mail-type=END,FAIL
 
