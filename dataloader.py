@@ -279,12 +279,23 @@ class CTCaseDataset(data.Dataset):
         patch = patch.astype(np.float32)
 
         # clip and scale...
-        patch = clip_and_scale(patch)
+        patch_lung = clip_and_scale(patch.copy(), -1000, 400)
+        patch_mediastinum = clip_and_scale(patch.copy(), 40, 400)
+        patch_soft_tissue = clip_and_scale(patch.copy(), -160, 240)
+
+        patch_combined = np.stack([patch_lung, patch_mediastinum, patch_soft_tissue], axis=0)
+
+        if patch_combined.shape[1] == 1:
+            patch_combined = patch_combined.squeeze(1)  # Verwijder alleen als dim=1
+
+        if self.mode == "2D":
+            if np.random.rand() < 0.5:
+                patch_combined = patch_combined[:, :, ::-1].copy()  # horizontal flip
 
         target = torch.ones((1,)) * label
 
         sample = {
-            "image": torch.from_numpy(patch),
+            "image": torch.from_numpy(patch_combined),
             "label": target.long(),
             "ID": annotation_id,
         }
@@ -386,11 +397,7 @@ def extract_patch(
         prefilter=False,
     ) 
 
-    if mode == "2D":
-        # replicate the channel dimension
-        patch = np.repeat(patch, 3, axis=0)
-
-    else:
+    if mode == "3D":
         patch = np.expand_dims(patch, axis=0)
 
     return patch
