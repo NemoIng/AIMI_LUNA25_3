@@ -15,6 +15,7 @@ import pandas
 from experiment_config import config
 from datetime import datetime
 import argparse
+import FocalLoss
 
 torch.backends.cudnn.benchmark = True
 
@@ -117,7 +118,7 @@ def train(
             freeze_bn=True,
         ).to(device)
 
-    loss_function = torch.nn.BCEWithLogitsLoss()
+    loss_function = FocalLoss.FocalLoss(alpha=0.25, gamma=2.0, reduction="mean").to(device)
     optimizer = torch.optim.Adam(
         model.parameters(),
         lr=config.LEARNING_RATE,

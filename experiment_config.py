@@ -27,8 +27,8 @@ class Configuration(object):
         if not self.EXPERIMENT_DIR.exists():
             self.EXPERIMENT_DIR.mkdir(parents=True)
             
-        self.EXPERIMENT_NAME = "LUNA25-baseline"
-        self.MODE = "3D" # 2D or 3D
+        self.EXPERIMENT_NAME = "LUNA25-baseline-resnet34"
+        self.MODE = "2D" # 2D or 3D
 
         # Training parameters
         self.SEED = 2025
@@ -38,8 +38,8 @@ class Configuration(object):
         self.BATCH_SIZE = 32
         self.ROTATION = ((-20, 20), (-20, 20), (-20, 20))
         self.TRANSLATION = True
-        self.EPOCHS = 10
-        self.PATIENCE = 20
+        self.EPOCHS = 30
+        self.PATIENCE = 7
         self.PATCH_SIZE = [64, 128, 128]
         self.LEARNING_RATE = 1e-4
         self.WEIGHT_DECAY = 5e-4
