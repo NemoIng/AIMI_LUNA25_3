@@ -5,7 +5,7 @@ class Configuration(object):
     def __init__(self) -> None:
 
         # Working directory
-        self.WORKDIR = Path("results/luna25-baseline-resnet34")
+        self.WORKDIR = Path(".")
         self.RESOURCES = Path("resources")
         # Starting weights for the I3D model
         self.MODEL_RGB_I3D = (
