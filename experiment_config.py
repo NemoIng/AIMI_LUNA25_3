@@ -1,8 +1,13 @@
 from pathlib import Path
+import FocalLoss
+import torch
 
+from models.model_2d import ResNet34
+from models.model_3d import I3D
 
 class Configuration(object):
     def __init__(self) -> None:
+        self.device = torch.device(f"cuda:0" if torch.cuda.is_available() else "cpu")
 
         # Working directory
         self.WORKDIR = Path(".")
@@ -27,8 +32,10 @@ class Configuration(object):
         if not self.EXPERIMENT_DIR.exists():
             self.EXPERIMENT_DIR.mkdir(parents=True)
             
-        self.EXPERIMENT_NAME = "LUNA25-baseline-resnet34"
+        self.EXPERIMENT_NAME = "new_config_test"
         self.MODE = "2D" # 2D or 3D
+
+        self.loss_function = FocalLoss.FocalLoss(alpha=0.25, gamma=2.0, reduction="mean").to(self.device)
 
         # Training parameters
         self.SEED = 2025
@@ -43,5 +50,22 @@ class Configuration(object):
         self.PATCH_SIZE = [64, 128, 128]
         self.LEARNING_RATE = 1e-4
         self.WEIGHT_DECAY = 5e-4
+
+        # set model
+        if self.MODE == "2D":
+            self.model = ResNet34().to(self.device)
+        elif self.MODE == "3D":
+            self.model = I3D(
+                num_classes=1,
+                input_channels=3,
+                pre_trained=True,
+                freeze_bn=True,
+            ).to(self.device)
+
+        self.optimizer = torch.optim.Adam(
+            self.model.parameters(),
+            lr=self.LEARNING_RATE,
+            weight_decay=self.WEIGHT_DECAY,
+        )
 
 config = Configuration()
