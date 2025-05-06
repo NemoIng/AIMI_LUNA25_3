@@ -2,6 +2,7 @@
 Script for training a ResNet18 or I3D to classify a pulmonary nodule as benign or malignant.
 """
 
+import shutil
 from dataloader import get_data_loader
 import logging
 import numpy as np
@@ -15,6 +16,9 @@ from experiment_config import config
 from datetime import datetime
 import argparse
 import FocalLoss
+import ComboLoss
+from models.model_2d import ResNet34
+from models.model_3d import I3D
 
 torch.backends.cudnn.benchmark = True
 
@@ -108,16 +112,17 @@ def train(
     )
 
     if config.MODE == "2D":
-        model = ResNet34().to(device)
+        model = ResNet34().to(config.device)
     elif config.MODE == "3D":
         model = I3D(
             num_classes=1,
             input_channels=3,
             pre_trained=True,
             freeze_bn=True,
-        ).to(device)
+        ).to(config.device)
 
-    loss_function = FocalLoss.FocalLoss(alpha=0.25, gamma=2.0, reduction="mean").to(device)
+    loss_function = ComboLoss.ComboLoss(alpha=0.25, gamma=2.0, dice_weight=0.3).to(config.device)
+
     optimizer = torch.optim.Adam(
         model.parameters(),
         lr=config.LEARNING_RATE,
