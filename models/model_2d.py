@@ -11,8 +11,12 @@ class ResNet34(nn.Module):
         # Replace the fully connected layer with a custom classification layer
         num_features = self.resnet34.fc.in_features
         self.resnet34.fc = nn.Sequential(
+            nn.BatchNorm1d(num_features),
+            nn.Dropout(p=0.5),
+            nn.Linear(num_features, 256),
+            nn.ReLU(),
             nn.Dropout(p=0.3),
-            nn.Linear(num_features, 1)
+            nn.Linear(256, 1)
         )
 
     def forward(self, x):

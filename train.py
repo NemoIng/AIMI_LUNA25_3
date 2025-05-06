@@ -16,6 +16,7 @@ from experiment_config import config
 from datetime import datetime
 import argparse
 import FocalLoss
+import ComboLoss
 
 torch.backends.cudnn.benchmark = True
 
@@ -118,7 +119,7 @@ def train(
             freeze_bn=True,
         ).to(device)
 
-    loss_function = FocalLoss.FocalLoss(alpha=0.25, gamma=2.0, reduction="mean").to(device)
+    loss_function = ComboLoss.ComboLoss(alpha=0.25, gamma=2.0, dice_weight=0.3).to(device)
     optimizer = torch.optim.Adam(
         model.parameters(),
         lr=config.LEARNING_RATE,

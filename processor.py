@@ -24,7 +24,7 @@ class MalignancyProcessor:
     Loads a chest CT scan, and predicts the malignancy around a nodule
     """
 
-    def __init__(self, mode="2D", suppress_logs=False, model_name="LUNA25-baseline-2D"):
+    def __init__(self, mode="2D", suppress_logs=False, model_name="LUNA25-2D-resnet34-v2-2D-20250504"):
 
         self.size_px = 64
         self.size_mm = 50
@@ -42,7 +42,7 @@ class MalignancyProcessor:
         elif self.mode == "3D":
             self.model_3d = I3D(num_classes=1, pre_trained=False, input_channels=3).to(device)
 
-        self.model_root = "/opt/app/resources/"
+        self.model_root = "/opt/app/results/"
 
     def define_inputs(self, image, header, coords):
         self.image = image
@@ -71,8 +71,13 @@ class MalignancyProcessor:
         patch = patch.astype(np.float32)
 
         # clip and scale...
-        patch = dataloader.clip_and_scale(patch)
-        return patch
+        patch_lung = dataloader.clip_and_scale(patch.copy(), -1000, 400)
+        patch_mediastinum = dataloader.clip_and_scale(patch.copy(), 40, 400)
+        patch_soft_tissue = dataloader.clip_and_scale(patch.copy(), -160, 240)
+
+        patch_combined = np.stack([patch_lung, patch_mediastinum, patch_soft_tissue], axis=0)
+        return patch_combined
+
 
     def _process_model(self, mode):
 
@@ -97,14 +102,19 @@ class MalignancyProcessor:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         nodules = torch.from_numpy(nodules).to(device)
 
-        ckpt = torch.load("/opt/app/model/best_metric_model.pth", map_location="cpu")
+        ckpt = torch.load(
+            os.path.join(self.model_root, self.model_name, "best_metric_model.pth"),
+            map_location=torch.device("cpu")
+        )
 
         model.load_state_dict(ckpt)
         model.eval()
-        
+
         # Convert grayscale (1-channel) input to 3-channel if needed
         if nodules.dim() == 4 and nodules.shape[1] == 1:
             nodules = nodules.repeat(1, 3, 1, 1)
+        elif nodules.dim() == 5 and nodules.shape[2] == 1:
+            nodules = nodules.squeeze(2)  # [B, C, 1, H, W] -> [B, C, H, W]
 
         logits = model(nodules)
         logits = logits.data.cpu().numpy()

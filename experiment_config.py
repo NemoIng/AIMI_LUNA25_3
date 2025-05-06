@@ -27,7 +27,7 @@ class Configuration(object):
         if not self.EXPERIMENT_DIR.exists():
             self.EXPERIMENT_DIR.mkdir(parents=True)
             
-        self.EXPERIMENT_NAME = "LUNA25-baseline-resnet34"
+        self.EXPERIMENT_NAME = "LUNA25-2D-resnet34-v2" # Name of the experiment
         self.MODE = "2D" # 2D or 3D
 
         # Training parameters
