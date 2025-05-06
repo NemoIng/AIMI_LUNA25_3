@@ -1,8 +1,7 @@
 """
 Script for training a ResNet18 or I3D to classify a pulmonary nodule as benign or malignant.
 """
-from models.model_2d import ResNet34
-from models.model_3d import I3D
+
 from dataloader import get_data_loader
 import logging
 import numpy as np
@@ -16,7 +15,6 @@ from experiment_config import config
 from datetime import datetime
 import argparse
 import FocalLoss
-import ComboLoss
 
 torch.backends.cudnn.benchmark = True
 
@@ -61,7 +59,7 @@ def train(
     valid_df = pandas.read_csv(valid_csv_path)
 
     # Cuda device selection
-    device = torch.device(f"cuda:0" if torch.cuda.is_available() else "cpu")
+    
 
     print()
 
@@ -119,7 +117,7 @@ def train(
             freeze_bn=True,
         ).to(device)
 
-    loss_function = ComboLoss.ComboLoss(alpha=0.25, gamma=2.0, dice_weight=0.3).to(device)
+    loss_function = FocalLoss.FocalLoss(alpha=0.25, gamma=2.0, reduction="mean").to(device)
     optimizer = torch.optim.Adam(
         model.parameters(),
         lr=config.LEARNING_RATE,
@@ -144,7 +142,7 @@ def train(
 
         # train
 
-        model.train()
+        config.model.train()
 
         epoch_loss = 0
         step = 0
@@ -152,13 +150,13 @@ def train(
         for batch_data in tqdm(train_loader):
             step += 1
             inputs, labels = batch_data["image"], batch_data["label"]
-            labels = labels.float().to(device)
-            inputs = inputs.to(device)
-            optimizer.zero_grad()
-            outputs = model(inputs)
-            loss = loss_function(outputs.squeeze(), labels.squeeze())
+            labels = labels.float().to(config.device)
+            inputs = inputs.to(config.device)
+            config.optimizer.zero_grad()
+            outputs = config.model(inputs)
+            loss = config.loss_function(outputs.squeeze(), labels.squeeze())
             loss.backward()
-            optimizer.step()
+            config.optimizer.step()
             epoch_loss += loss.item()
             epoch_len = len(train_df) // train_loader.batch_size
             if step % 100 == 0:
@@ -172,25 +170,25 @@ def train(
 
         # validate
 
-        model.eval()
+        config.model.eval()
 
         epoch_loss = 0
         step = 0
 
         with torch.no_grad():
 
-            y_pred = torch.tensor([], dtype=torch.float32, device=device)
-            y = torch.tensor([], dtype=torch.float32, device=device)
+            y_pred = torch.tensor([], dtype=torch.float32, device=config.device)
+            y = torch.tensor([], dtype=torch.float32, device=config.device)
             for val_data in valid_loader:
                 step += 1
                 val_images, val_labels = (
-                    val_data["image"].to(device),
-                    val_data["label"].to(device),
+                    val_data["image"].to(config.device),
+                    val_data["label"].to(config.device),
                 )
-                val_images = val_images.to(device)
-                val_labels = val_labels.float().to(device)
-                outputs = model(val_images)
-                loss = loss_function(outputs.squeeze(), val_labels.squeeze())
+                val_images = val_images.to(config.device)
+                val_labels = val_labels.float().to(config.device)
+                outputs = config.model(val_images)
+                loss = config.loss_function(outputs.squeeze(), val_labels.squeeze())
                 epoch_loss += loss.item()
                 y_pred = torch.cat([y_pred, outputs], dim=0)
                 y = torch.cat([y, val_labels], dim=0)
@@ -215,7 +213,7 @@ def train(
                 best_metric_epoch = epoch + 1
 
                 torch.save(
-                    model.state_dict(),
+                    config.model.state_dict(),
                     exp_save_root / "best_metric_model.pth",
                 )
 
@@ -252,6 +250,8 @@ if __name__ == "__main__":
 
     exp_save_root = config.EXPERIMENT_DIR / experiment_name
     exp_save_root.mkdir(parents=True, exist_ok=True)
+
+    shutil.copyfile("experiment_config.py", f"{exp_save_root}/experiment_config.py")
 
     # start training run
     train(

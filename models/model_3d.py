@@ -5,8 +5,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from torch.nn import ReplicationPad3d
-
-from experiment_config import config
+from pathlib import Path
 
 
 def get_padding_shape(filter_shape, stride):
@@ -261,7 +260,11 @@ class I3D(torch.nn.Module):
                 use_bn=False,
             )
             # load model
-            self.load_state_dict(torch.load(config.MODEL_RGB_I3D))
+            # self.load_state_dict(torch.load(config.MODEL_RGB_I3D))
+            # hard coded, without config use
+            RESOURCES = Path("resources")
+            # Starting weights for the I3D model
+            self.load_state_dict(torch.load(RESOURCES / "model_rgb.pth"))
 
         # freeze batchnorm
         self.train()
@@ -523,6 +526,7 @@ def load_mixed(state_dict, name_pt, sess, name_tf, fix_typo=False):
 
 if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
     model = I3D(
         num_classes=1,
         input_channels=3,
