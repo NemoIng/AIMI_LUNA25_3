@@ -2,7 +2,6 @@
 Script for training a ResNet18 or I3D to classify a pulmonary nodule as benign or malignant.
 """
 
-import shutil
 from dataloader import get_data_loader
 import logging
 import numpy as np
@@ -14,11 +13,7 @@ import random
 import pandas
 from experiment_config import config
 from datetime import datetime
-import argparse
-import FocalLoss
-import ComboLoss
-from models.model_2d import ResNet34
-from models.model_3d import I3D
+import shutil
 
 torch.backends.cudnn.benchmark = True
 
@@ -62,9 +57,6 @@ def train(
     train_df = pandas.read_csv(train_csv_path)
     valid_df = pandas.read_csv(valid_csv_path)
 
-    # Cuda device selection
-    
-
     print()
 
     logging.info(
@@ -78,8 +70,30 @@ def train(
         f"Number of malignant validation samples: {valid_df.label.sum()}"
     )
     logging.info(
-        f"Number of benign validation samples: {len(valid_df) - valid_df.label.sum()}"
+        f"Number of benign validation samples: {len(valid_df) - valid_df.label.sum()}\n"
     )
+    
+    
+    # Print hyperparameters
+    logging.info(f"Experiment name: {config.EXPERIMENT_NAME}")
+    logging.info(f"Experiment mode: {config.MODE}")
+    logging.info(f"Batch size: {config.BATCH_SIZE}")
+    logging.info(f"Epochs: {config.EPOCHS}")
+    logging.info(f"Learning rate: {config.LEARNING_RATE}")   
+    logging.info(f"Weight decay: {config.WEIGHT_DECAY}")  
+    logging.info(f"Dropout: {config.DROPOUT}")
+    logging.info(f"Batch normalization: {config.BATCHNORM}")
+    logging.info(f"Rotation: {config.ROTATION}")
+    logging.info(f"Translation: {config.TRANSLATION}")
+    logging.info(f"Patch size: {config.PATCH_SIZE}")
+    logging.info(f"Loss function: {config.loss_function}")
+    logging.info(f"Alpha: {config.alpha}")
+    logging.info(f"Gamma: {config.gamma}")
+    logging.info(f"Dice weight: {config.dice_weight}\n")
+    
+    model_str_lines = str(config.model).splitlines()
+    # Print the last few lines
+    logging.info("\n" + "\n".join(model_str_lines[-15:]))
 
     # create a training data loader
     weights = make_weights_for_balanced_classes(train_df.label.values)
@@ -111,23 +125,7 @@ def train(
         size_px=config.SIZE_PX,
     )
 
-    if config.MODE == "2D":
-        model = ResNet34().to(config.device)
-    elif config.MODE == "3D":
-        model = I3D(
-            num_classes=1,
-            input_channels=3,
-            pre_trained=True,
-            freeze_bn=True,
-        ).to(config.device)
-
-    loss_function = ComboLoss.ComboLoss(alpha=0.25, gamma=2.0, dice_weight=0.3).to(config.device)
-
-    optimizer = torch.optim.Adam(
-        model.parameters(),
-        lr=config.LEARNING_RATE,
-        weight_decay=config.WEIGHT_DECAY,
-    )
+    
 
     # start a typical PyTorch training
     best_metric = -1
