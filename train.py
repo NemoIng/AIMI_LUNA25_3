@@ -157,7 +157,7 @@ def train(
             step += 1
             inputs, labels = batch_data["image"], batch_data["label"]
             labels = labels.float().to(config.device)
-            inputs = inputs.to(config.device)
+            inputs = inputs.float().to(config.device)
             config.optimizer.zero_grad()
             outputs = config.model(inputs)
             loss = config.loss_function(outputs.squeeze(), labels.squeeze())
@@ -187,10 +187,8 @@ def train(
             y = torch.tensor([], dtype=torch.float32, device=config.device)
             for val_data in valid_loader:
                 step += 1
-                val_images, val_labels = (
-                    val_data["image"].to(config.device),
-                    val_data["label"].to(config.device),
-                )
+                val_images = val_data["image"].float().to(config.device)
+                val_labels = val_data["label"].float().to(config.device)
                 val_images = val_images.to(config.device)
                 val_labels = val_labels.float().to(config.device)
                 outputs = config.model(val_images)
