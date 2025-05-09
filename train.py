@@ -14,6 +14,9 @@ import pandas
 from experiment_config import config
 from datetime import datetime
 import shutil
+from sklearn.metrics import confusion_matrix
+from statsmodels.stats.proportion import proportion_confint
+import scipy.stats as st
 
 torch.backends.cudnn.benchmark = True
 
@@ -209,6 +212,27 @@ def train(
             fpr, tpr, _ = metrics.roc_curve(y, y_pred)
             auc_metric = metrics.auc(fpr, tpr)
 
+            # AUC 95% CI via DeLong method approximation
+            def auc_ci(y_true, y_scores, alpha=0.95):
+                n = len(y_scores)
+                auc = metrics.roc_auc_score(y_true, y_scores)
+                q1 = auc / (2 - auc)
+                q2 = 2 * auc**2 / (1 + auc)
+                se = np.sqrt((auc * (1 - auc) + (n - 1) * (q1 - auc**2) + (n - 1) * (q2 - auc**2)) / (n**2))
+                z = st.norm.ppf(1 - (1 - alpha) / 2)
+                lower = max(0.0, auc - z * se)
+                upper = min(1.0, auc + z * se)
+                return lower, upper
+
+            auc_ci_low, auc_ci_high = auc_ci(y, y_pred)
+
+            # Confusion matrix @ threshold 0.5
+            y_pred_binary = (y_pred >= 0.5).astype(int)
+            tn, fp, fn, tp = confusion_matrix(y, y_pred_binary).ravel()
+
+            sensitivity = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+            specificity = tn / (tn + fp) if (tn + fp) > 0 else 0.0
+
             if auc_metric > best_metric:
 
                 counter = 0
@@ -235,10 +259,10 @@ def train(
                 logging.info("saved new best metric model")
 
             logging.info(
-                "current epoch: {} current AUC: {:.4f} best AUC: {:.4f} at epoch {}".format(
-                    epoch + 1, auc_metric, best_metric, best_metric_epoch
-                )
+                f"epoch {epoch + 1}: AUC = {auc_metric:.4f} (CI 95%: {auc_ci_low:.4f}–{auc_ci_high:.4f}), "
+                f"Sensitivity = {sensitivity:.4f}, Specificity = {specificity:.4f}"
             )
+
         counter += 1
 
     logging.info(
