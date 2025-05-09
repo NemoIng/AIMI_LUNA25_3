@@ -75,7 +75,7 @@ def itk_image_to_numpy_image(input_image):
 
 
 class NoduleProcessor:
-    def __init__(self, ct_image_file, nodule_locations, clinical_information, mode="2D", model_name="LUNA25-2D-resnet34-v2-2D-20250504"):
+    def __init__(self, ct_image_file, nodule_locations, clinical_information, mode="3D", model_name="LUNA25-3D-lowLR-highWD-noDice-rot=90-3D-20250507"):
         """
         Parameters
         ----------
@@ -168,7 +168,7 @@ class NoduleProcessor:
         return results
 
 
-def run(mode="2D", model_name="LUNA25-2D-resnet34-v2-2D-20250504"):
+def run(mode="3D", model_name="LUNA25-3D-lowLR-highWD-noDice-rot=90-3D-20250507"):
     # Read the inputs
     input_nodule_locations = load_json_file(
         location=INPUT_PATH / "nodule-locations.json",
@@ -250,7 +250,7 @@ def _show_torch_cuda_info():
 
 
 if __name__ == "__main__":
-    mode = "2D"
-    model_name = "LUNA25-2D-resnet34-v2-2D-20250504"
+    mode = "3D"
+    model_name = "LUNA25-3D-lowLR-highWD-noDice-rot=90-3D-20250507"
     raise SystemExit(run(mode= mode,
                          model_name=model_name))

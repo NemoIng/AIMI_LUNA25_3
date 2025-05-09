@@ -34,8 +34,8 @@ class Configuration(object):
             
         # self.EXPERIMENT_NAME = "LUNA25-3D-Combo" # Name of the experiment
         # self.MODE = "3D" # 2D or 3D
-        self.EXPERIMENT_NAME = "LUNA25-2D-test-lowLR-highWD-noDice" # Name of the experiment
-        self.MODE = "2D" # 2D or 3D
+        self.EXPERIMENT_NAME = "LUNA25-3D-test" # Name of the experiment
+        self.MODE = "3D" # 2D or 3D
 
         self.alpha = 0.3
         self.gamma = 2.0

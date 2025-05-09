@@ -6,7 +6,7 @@ set -e
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 # Set default container name
-DOCKER_IMAGE_TAG="luna25-resnet34"
+DOCKER_IMAGE_TAG="resnet34-3d"
 
 # Check if an argument is provided
 if [ "$#" -eq 1 ]; then

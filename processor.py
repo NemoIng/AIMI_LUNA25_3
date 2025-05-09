@@ -24,7 +24,7 @@ class MalignancyProcessor:
     Loads a chest CT scan, and predicts the malignancy around a nodule
     """
 
-    def __init__(self, mode="2D", suppress_logs=False, model_name="LUNA25-2D-resnet34-v2-2D-20250504"):
+    def __init__(self, mode="3D", suppress_logs=False, model_name="LUNA25-3D-lowLR-highWD-noDice-rot=90-3D-20250507"):
 
         self.size_px = 64
         self.size_mm = 50
@@ -112,9 +112,11 @@ class MalignancyProcessor:
 
         # Convert grayscale (1-channel) input to 3-channel if needed
         if nodules.dim() == 4 and nodules.shape[1] == 1:
+            # For 2D: [B, 1, H, W] -> [B, 3, H, W]
             nodules = nodules.repeat(1, 3, 1, 1)
-        elif nodules.dim() == 5 and nodules.shape[2] == 1:
-            nodules = nodules.squeeze(2)  # [B, C, 1, H, W] -> [B, C, H, W]
+        elif nodules.dim() == 6 and nodules.shape[2] == 1:
+            # For 3D: [B, C, 1, D, H, W] -> [B, C, D, H, W]
+            nodules = nodules.squeeze(2)
 
         logits = model(nodules)
         logits = logits.data.cpu().numpy()

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-DOCKER_IMAGE_TAG="luna25-2d-resnet34-v2"
+DOCKER_IMAGE_TAG="resnet34-3d"
 
 # Check if an argument is provided
 if [ "$#" -eq 1 ]; then
