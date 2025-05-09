@@ -168,7 +168,7 @@ class I3D(torch.nn.Module):
         num_classes,
         input_channels,
         modality="rgb",
-        dropout_prob=0.2,
+        dropout_prob=0,
         name="inception",
         pre_trained=True,
         freeze_bn=True,

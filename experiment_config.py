@@ -34,7 +34,7 @@ class Configuration(object):
             
         # self.EXPERIMENT_NAME = "LUNA25-3D-Combo" # Name of the experiment
         # self.MODE = "3D" # 2D or 3D
-        self.EXPERIMENT_NAME = "LUNA25-2D-test-lowLR-highWD-noDice" # Name of the experiment
+        self.EXPERIMENT_NAME = "LUNA25-3D-lowLR-highWD-noDice-rot=90-test" # Name of the experiment
         self.MODE = "2D" # 2D or 3D
 
         self.alpha = 0.3
@@ -48,16 +48,18 @@ class Configuration(object):
         self.SIZE_MM = 50
         self.SIZE_PX = 64
         self.BATCH_SIZE = 32
-        self.ROTATION = ((-180, 180), (-180, 180), (-180, 180)) #((-20, 20), (-20, 20), (-20, 20))
+        # self.ROTATION = ((-180, 180), (-180, 180), (-180, 180))
+        # self.ROTATION = ((-20, 20), (-20, 20), (-20, 20))
+        self.ROTATION = ((-90, 90), (-90, 90), (-90, 90))
         self.TRANSLATION = True
         self.EPOCHS = 30
         self.PATIENCE = 7
         self.PATCH_SIZE = [64, 128, 128]
-        self.LEARNING_RATE = 2e-5
-        self.WEIGHT_DECAY = 5e-3
+        self.LEARNING_RATE = 4e-5
+        self.WEIGHT_DECAY = 2e-3
         
         # Model parameters
-        self.DROPOUT = [0, 0]# [0.3, 0.3]
+        self.DROPOUT = [0, 0] # [0.3, 0.3]
         self.BATCHNORM = True 
         
         # set model
@@ -69,6 +71,7 @@ class Configuration(object):
                 input_channels=3,
                 pre_trained=True,
                 freeze_bn=True,
+                dropout_prob=self.DROPOUT[0],
             ).to(self.device)
 
         self.optimizer = torch.optim.AdamW(
