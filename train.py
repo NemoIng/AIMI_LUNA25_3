@@ -224,9 +224,16 @@ def train(
 
             auc_ci_low, auc_ci_high = auc_ci(y, y_pred)
 
-            # Confusion matrix @ threshold 0.5
-            y_pred_binary = (y_pred >= 0.5).astype(int)
-            tn, fp, fn, tp = confusion_matrix(y, y_pred_binary).ravel()
+            y_true_binary = y.astype(int)
+
+            fpr, tpr, thresholds = metrics.roc_curve(y, y_pred)
+            J = tpr - fpr
+            ix = np.argmax(J)
+            best_thresh = thresholds[ix]
+
+            y_pred_binary = (y_pred >= best_thresh).astype(int)
+
+            tn, fp, fn, tp = confusion_matrix(y_true_binary, y_pred_binary).ravel()
 
             sensitivity = tp / (tp + fn) if (tp + fn) > 0 else 0.0
             specificity = tn / (tn + fp) if (tn + fp) > 0 else 0.0
