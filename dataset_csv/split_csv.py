@@ -73,11 +73,32 @@ def split_csv_stratified_group(csv_file, train_file, val_file, train_size=0.8, t
     print(f"Validation set saved to {val_file}")
 
 
+def generate_crossval_csvs(input_csv_path, output_dir, n_splits=5):
+    df = pd.read_csv(input_csv_path)
+    if 'label' not in df or 'PatientID' not in df:
+        raise ValueError("CSV must contain 'label' and 'PatientID' columns")
+
+    group_kfold = GroupKFold(n_splits=n_splits)
+    groups = df['PatientID']
+
+    for fold, (train_idx, val_idx) in enumerate(group_kfold.split(df, df['label'], groups)):
+        train_df = df.iloc[train_idx]
+        val_df = df.iloc[val_idx]
+
+        train_df.to_csv(f"{output_dir}/train_fold{fold}.csv", index=False)
+        val_df.to_csv(f"{output_dir}/val_fold{fold}.csv", index=False)
+
+        print(f"Fold {fold}:")
+        print(" Train label dist:\n", train_df['label'].value_counts(normalize=True))
+        print(" Val label dist:\n", val_df['label'].value_counts(normalize=True))
+
 
 if __name__ == "__main__":
     # Example usage:
-    input_csv_path = 'LUNA25_original.csv'  # Replace with the path to your input CSV file
+    input_csv_path = 'dataset_csv/LUNA25_original.csv'  # Replace with the path to your input CSV file
     train_output_csv_path = 'train.csv'
     val_output_csv_path = 'val.csv'
     train_size = 0.9  # 90% for training, 10% for validation
-    split_csv_stratified_group(input_csv_path, train_output_csv_path, val_output_csv_path, train_size=train_size)
+    n_splits = 5  # Number of splits for cross-validation
+    # split_csv_stratified_group(input_csv_path, train_output_csv_path, val_output_csv_path, train_size=train_size)
+    generate_crossval_csvs(input_csv_path, "dataset_csv", n_splits)
