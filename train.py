@@ -273,8 +273,9 @@ def train(
 
 
 if __name__ == "__main__":
+    base_name = f"{config.EXPERIMENT_NAME}-{config.MODE}-{datetime.today().strftime('%Y%m%d')}"
     for fold in range(5):  # 5-fold cross-validation
-        config.EXPERIMENT_NAME = f"{config.EXPERIMENT_NAME}-{config.MODE}-{datetime.today().strftime('%Y%m%d')}--fold{fold}"
+        config.EXPERIMENT_NAME = f"{base_name}--fold{fold}"
 
         exp_save_root = config.EXPERIMENT_DIR / config.EXPERIMENT_NAME
         exp_save_root.mkdir(parents=True, exist_ok=True)
