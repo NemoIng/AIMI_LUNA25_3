@@ -273,16 +273,16 @@ def train(
 
 
 if __name__ == "__main__":
-    experiment_name = f"{config.EXPERIMENT_NAME}-{config.MODE}-{datetime.today().strftime('%Y%m%d')}"
+    for fold in range(5):  # 5-fold cross-validation
+        config.EXPERIMENT_NAME = f"{config.EXPERIMENT_NAME}-{config.MODE}-{datetime.today().strftime('%Y%m%d')}--fold{fold}"
 
-    exp_save_root = config.EXPERIMENT_DIR / experiment_name
-    exp_save_root.mkdir(parents=True, exist_ok=True)
+        exp_save_root = config.EXPERIMENT_DIR / config.EXPERIMENT_NAME
+        exp_save_root.mkdir(parents=True, exist_ok=True)
 
-    shutil.copyfile("experiment_config.py", f"{exp_save_root}/experiment_config.py")
+        shutil.copyfile("experiment_config.py", f"{exp_save_root}/experiment_config.py")
 
-    # start training run
-    train(
-        train_csv_path=config.CSV_DIR_TRAIN,
-        valid_csv_path=config.CSV_DIR_VALID,
-        exp_save_root=exp_save_root,
+        train(
+            train_csv_path=config.CSV_DIR / f"train_fold{fold}.csv",
+            valid_csv_path=config.CSV_DIR / f"val_fold{fold}.csv",
+            exp_save_root=exp_save_root,
         )
