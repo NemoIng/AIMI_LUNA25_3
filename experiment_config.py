@@ -34,8 +34,8 @@ class Configuration(object):
             
         # self.EXPERIMENT_NAME = "LUNA25-3D-Combo" # Name of the experiment
         # self.MODE = "3D" # 2D or 3D
-        self.EXPERIMENT_NAME = "LUNA25-3D-test" # Name of the experiment
-        self.MODE = "3D" # 2D or 3D
+        self.EXPERIMENT_NAME = "LUNA25-2D-test" # Name of the experiment
+        self.MODE = "2D" # 2D or 3D
 
         self.alpha = 0.3
         self.gamma = 2.0
@@ -50,7 +50,7 @@ class Configuration(object):
         self.BATCH_SIZE = 32
         self.ROTATION = ((-180, 180), (-180, 180), (-180, 180)) #((-20, 20), (-20, 20), (-20, 20))
         self.TRANSLATION = True
-        self.EPOCHS = 30
+        self.EPOCHS = 1
         self.PATIENCE = 7
         self.PATCH_SIZE = [64, 128, 128]
         self.LEARNING_RATE = 2e-5
