@@ -55,6 +55,24 @@ class Configuration(object):
         self.PATCH_SIZE = [64, 128, 128]
         self.LEARNING_RATE = 2e-5
         self.WEIGHT_DECAY = 5e-3
+
+        self.AUGMENTATIONS = {
+            # 2D
+            "horizontal_flip": 0.5,
+            "rotation_90": 0.5,
+            "brightness_shift": 0.3,
+            "gaussian_noise": 0.3,
+            "coarse_dropout": 0.3,
+            "zoom": 0.3,
+            "shear": 0.3,
+            # 3D
+            "flip_x": 0.5,
+            "flip_y": 0.5,
+            "flip_z": 0.5,
+            "brightness_shift_3d": 0.3,
+            "gaussian_noise_3d": 0.3,
+            "coarse_dropout_3d": 0.3,
+        }
         
         # Model parameters
         self.DROPOUT = [0, 0]# [0.3, 0.3]

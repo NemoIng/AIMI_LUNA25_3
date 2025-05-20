@@ -8,6 +8,8 @@ import numpy.linalg as npl
 import scipy.ndimage as ndi
 from experiment_config import config
 import pandas as pd
+from scipy.ndimage import zoom as scipy_zoom
+from skimage.transform import AffineTransform, warp
 
 def _calculateAllPermutations(itemList):
     if len(itemList) == 1:
@@ -291,68 +293,77 @@ class CTCaseDataset(data.Dataset):
         # Augmentations on 2D
         if self.mode == "2D":
 
-            # Horizontal flip
-            if np.random.rand() < 0.5:
+            if np.random.rand() < config.AUGMENTATIONS["horizontal_flip"]:
                 patch_combined = patch_combined[:, :, ::-1].copy()
 
-            # Rotation (multiples of 90°)
-            if np.random.rand() < 0.5:
-                k = np.random.choice([1, 2, 3])  # 90°, 180°, 270°
+            if np.random.rand() < config.AUGMENTATIONS["rotation_90"]:
+                k = np.random.choice([1, 2, 3])
                 patch_combined = np.rot90(patch_combined, k=k, axes=(1, 2)).copy()
 
-            # Brightness shift
-            if np.random.rand() < 0.3:
+            if np.random.rand() < config.AUGMENTATIONS["brightness_shift"]:
                 shift = np.random.uniform(-0.1, 0.1)
                 patch_combined = np.clip(patch_combined + shift, 0, 1)
 
-            # Gaussian noise
-            if np.random.rand() < 0.3:
+            if np.random.rand() < config.AUGMENTATIONS["gaussian_noise"]:
                 noise = np.random.normal(0, 0.01, size=patch_combined.shape)
                 patch_combined = np.clip(patch_combined + noise, 0, 1)
 
-            # Coarse dropout 
-            # Randomly set small patches to zero
-            if np.random.rand() < 0.3:
+            if np.random.rand() < config.AUGMENTATIONS["coarse_dropout"]:
                 for _ in range(np.random.randint(1, 4)):
                     x = np.random.randint(0, patch_combined.shape[1] - 8)
                     y = np.random.randint(0, patch_combined.shape[2] - 8)
                     patch_combined[:, x:x+8, y:y+8] = 0
+
+            if np.random.rand() < config.AUGMENTATIONS["zoom"]:
+                zoom_factor = np.random.uniform(0.9, 1.1)
+                zoomed = []
+                for c in range(patch_combined.shape[0]):
+                    z = scipy_zoom(patch_combined[c], zoom_factor, order=1)
+                    z = resize_to_original(z, (patch_combined.shape[1], patch_combined.shape[2]))
+                    zoomed.append(z)
+                patch_combined = np.stack(zoomed, axis=0)
+
+            if np.random.rand() < config.AUGMENTATIONS["shear"]:
+                shear_deg = np.random.uniform(-10, 10)
+                transform = AffineTransform(shear=np.deg2rad(shear_deg))
+                sheared = []
+                for c in range(patch_combined.shape[0]):
+                    sheared_slice = warp(patch_combined[c], transform, mode='edge', preserve_range=True)
+                    sheared_slice = resize_to_original(sheared_slice, (patch_combined.shape[1], patch_combined.shape[2]))
+                    sheared.append(sheared_slice.astype(np.float32))
+                patch_combined = np.stack(sheared, axis=0)
+
 
 
         # Augmentations on 3D
         if self.mode == "3D":
             # patch_combined shape: [1, D, H, W]
 
-            # Flip z-axis
-            if np.random.rand() < 0.5:
+            # patch_combined shape: [C, D, H, W], meestal C=1 of 3
+
+            if config.AUGMENTATIONS["flip_z"] > 0 and np.random.rand() < config.AUGMENTATIONS["flip_z"]:
                 patch_combined = patch_combined[:, ::-1, :, :].copy()
 
-            # Flip y-axis
-            if np.random.rand() < 0.5:
+            if config.AUGMENTATIONS["flip_y"] > 0 and np.random.rand() < config.AUGMENTATIONS["flip_y"]:
                 patch_combined = patch_combined[:, :, ::-1, :].copy()
 
-            # Flip x-axis
-            if np.random.rand() < 0.5:
+            if config.AUGMENTATIONS["flip_x"] > 0 and np.random.rand() < config.AUGMENTATIONS["flip_x"]:
                 patch_combined = patch_combined[:, :, :, ::-1].copy()
 
-            # Gaussian noise
-            if np.random.rand() < 0.3:
+            if config.AUGMENTATIONS["gaussian_noise_3d"] > 0 and np.random.rand() < config.AUGMENTATIONS["gaussian_noise_3d"]:
                 noise = np.random.normal(0, 0.01, size=patch_combined.shape)
                 patch_combined = np.clip(patch_combined + noise, 0, 1)
 
-            # Brightness shift
-            if np.random.rand() < 0.3:
+            if config.AUGMENTATIONS["brightness_shift_3d"] > 0 and np.random.rand() < config.AUGMENTATIONS["brightness_shift_3d"]:
                 shift = np.random.uniform(-0.1, 0.1)
                 patch_combined = np.clip(patch_combined + shift, 0, 1)
 
-            # Coarse dropout
-            if np.random.rand() < 0.3:
+            if config.AUGMENTATIONS["coarse_dropout_3d"] > 0 and np.random.rand() < config.AUGMENTATIONS["coarse_dropout_3d"]:
                 for _ in range(np.random.randint(1, 3)):
                     z = np.random.randint(0, patch_combined.shape[1] - 8)
                     y = np.random.randint(0, patch_combined.shape[2] - 8)
                     x = np.random.randint(0, patch_combined.shape[3] - 8)
                     patch_combined[:, z:z+8, y:y+8, x:x+8] = 0
-
 
         target = torch.ones((1,)) * label
 
@@ -361,6 +372,8 @@ class CTCaseDataset(data.Dataset):
             "label": target.long(),
             "ID": annotation_id,
         }
+
+        assert patch_combined.shape == (3, self.size_px, self.size_px), f"Shape mismatch: {patch_combined.shape}"
 
         return sample
 
@@ -373,6 +386,29 @@ class CTCaseDataset(data.Dataset):
         return fmt_str
     
 
+def resize_to_original(img, target_shape):
+    """Crop or pad img to match target_shape (H, W)."""
+    H, W = target_shape
+    h, w = img.shape
+
+    # Crop if too large
+    if h > H:
+        start = (h - H) // 2
+        img = img[start:start + H, :]
+    elif h < H:
+        pad_top = (H - h) // 2
+        pad_bottom = H - h - pad_top
+        img = np.pad(img, ((pad_top, pad_bottom), (0, 0)), mode="edge")
+
+    if w > W:
+        start = (w - W) // 2
+        img = img[:, start:start + W]
+    elif w < W:
+        pad_left = (W - w) // 2
+        pad_right = W - w - pad_left
+        img = np.pad(img, ((0, 0), (pad_left, pad_right)), mode="edge")
+
+    return img    
 
 def sample_random_coordinate_on_sphere(radius):
     # Generate three random numbers x,y,z using Gaussian distribution
