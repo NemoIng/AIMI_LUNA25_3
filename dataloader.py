@@ -288,9 +288,71 @@ class CTCaseDataset(data.Dataset):
         if patch_combined.shape[1] == 1:
             patch_combined = patch_combined.squeeze(1)  # Verwijder alleen als dim=1
 
+        # Augmentations on 2D
         if self.mode == "2D":
+
+            # Horizontal flip
             if np.random.rand() < 0.5:
-                patch_combined = patch_combined[:, :, ::-1].copy()  # horizontal flip
+                patch_combined = patch_combined[:, :, ::-1].copy()
+
+            # Rotation (multiples of 90°)
+            if np.random.rand() < 0.5:
+                k = np.random.choice([1, 2, 3])  # 90°, 180°, 270°
+                patch_combined = np.rot90(patch_combined, k=k, axes=(1, 2)).copy()
+
+            # Brightness shift
+            if np.random.rand() < 0.3:
+                shift = np.random.uniform(-0.1, 0.1)
+                patch_combined = np.clip(patch_combined + shift, 0, 1)
+
+            # Gaussian noise
+            if np.random.rand() < 0.3:
+                noise = np.random.normal(0, 0.01, size=patch_combined.shape)
+                patch_combined = np.clip(patch_combined + noise, 0, 1)
+
+            # Coarse dropout 
+            # Randomly set small patches to zero
+            if np.random.rand() < 0.3:
+                for _ in range(np.random.randint(1, 4)):
+                    x = np.random.randint(0, patch_combined.shape[1] - 8)
+                    y = np.random.randint(0, patch_combined.shape[2] - 8)
+                    patch_combined[:, x:x+8, y:y+8] = 0
+
+
+        # Augmentations on 3D
+        if self.mode == "3D":
+            # patch_combined shape: [1, D, H, W]
+
+            # Flip z-axis
+            if np.random.rand() < 0.5:
+                patch_combined = patch_combined[:, ::-1, :, :].copy()
+
+            # Flip y-axis
+            if np.random.rand() < 0.5:
+                patch_combined = patch_combined[:, :, ::-1, :].copy()
+
+            # Flip x-axis
+            if np.random.rand() < 0.5:
+                patch_combined = patch_combined[:, :, :, ::-1].copy()
+
+            # Gaussian noise
+            if np.random.rand() < 0.3:
+                noise = np.random.normal(0, 0.01, size=patch_combined.shape)
+                patch_combined = np.clip(patch_combined + noise, 0, 1)
+
+            # Brightness shift
+            if np.random.rand() < 0.3:
+                shift = np.random.uniform(-0.1, 0.1)
+                patch_combined = np.clip(patch_combined + shift, 0, 1)
+
+            # Coarse dropout
+            if np.random.rand() < 0.3:
+                for _ in range(np.random.randint(1, 3)):
+                    z = np.random.randint(0, patch_combined.shape[1] - 8)
+                    y = np.random.randint(0, patch_combined.shape[2] - 8)
+                    x = np.random.randint(0, patch_combined.shape[3] - 8)
+                    patch_combined[:, z:z+8, y:y+8, x:x+8] = 0
+
 
         target = torch.ones((1,)) * label
 

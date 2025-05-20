@@ -157,7 +157,7 @@ def train(
             step += 1
             inputs, labels = batch_data["image"], batch_data["label"]
             labels = labels.float().to(config.device)
-            inputs = inputs.to(config.device)
+            inputs = inputs.float().to(config.device)
             config.optimizer.zero_grad()
             outputs = config.model(inputs)
             loss = config.loss_function(outputs.squeeze(), labels.squeeze())
@@ -187,10 +187,8 @@ def train(
             y = torch.tensor([], dtype=torch.float32, device=config.device)
             for val_data in valid_loader:
                 step += 1
-                val_images, val_labels = (
-                    val_data["image"].to(config.device),
-                    val_data["label"].to(config.device),
-                )
+                val_images = val_data["image"].float().to(config.device)
+                val_labels = val_data["label"].float().to(config.device)
                 val_images = val_images.to(config.device)
                 val_labels = val_labels.float().to(config.device)
                 outputs = config.model(val_images)
@@ -226,9 +224,16 @@ def train(
 
             auc_ci_low, auc_ci_high = auc_ci(y, y_pred)
 
-            # Confusion matrix @ threshold 0.5
-            y_pred_binary = (y_pred >= 0.5).astype(int)
-            tn, fp, fn, tp = confusion_matrix(y, y_pred_binary).ravel()
+            y_true_binary = y.astype(int)
+
+            fpr, tpr, thresholds = metrics.roc_curve(y, y_pred)
+            J = tpr - fpr
+            ix = np.argmax(J)
+            best_thresh = thresholds[ix]
+
+            y_pred_binary = (y_pred >= best_thresh).astype(int)
+
+            tn, fp, fn, tp = confusion_matrix(y_true_binary, y_pred_binary).ravel()
 
             sensitivity = tp / (tp + fn) if (tp + fn) > 0 else 0.0
             specificity = tn / (tn + fp) if (tn + fp) > 0 else 0.0
@@ -273,16 +278,17 @@ def train(
 
 
 if __name__ == "__main__":
-    experiment_name = f"{config.EXPERIMENT_NAME}-{config.MODE}-{datetime.today().strftime('%Y%m%d')}"
+    base_name = f"{config.EXPERIMENT_NAME}-{config.MODE}-{datetime.today().strftime('%Y%m%d')}"
+    for fold in range(5):  # 5-fold cross-validation
+        config.EXPERIMENT_NAME = f"{base_name}--fold{fold}"
 
-    exp_save_root = config.EXPERIMENT_DIR / experiment_name
-    exp_save_root.mkdir(parents=True, exist_ok=True)
+        exp_save_root = config.EXPERIMENT_DIR / config.EXPERIMENT_NAME
+        exp_save_root.mkdir(parents=True, exist_ok=True)
 
-    shutil.copyfile("experiment_config.py", f"{exp_save_root}/experiment_config.py")
+        shutil.copyfile("experiment_config.py", f"{exp_save_root}/experiment_config.py")
 
-    # start training run
-    train(
-        train_csv_path=config.CSV_DIR_TRAIN,
-        valid_csv_path=config.CSV_DIR_VALID,
-        exp_save_root=exp_save_root,
+        train(
+            train_csv_path=config.CSV_DIR / f"train_fold{fold}.csv",
+            valid_csv_path=config.CSV_DIR / f"val_fold{fold}.csv",
+            exp_save_root=exp_save_root,
         )
