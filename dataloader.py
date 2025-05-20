@@ -8,6 +8,8 @@ import numpy.linalg as npl
 import scipy.ndimage as ndi
 from experiment_config import config
 import pandas as pd
+from scipy.ndimage import zoom as scipy_zoom
+from skimage.transform import AffineTransform, warp
 
 def _calculateAllPermutations(itemList):
     if len(itemList) == 1:
@@ -317,6 +319,32 @@ class CTCaseDataset(data.Dataset):
                     x = np.random.randint(0, patch_combined.shape[1] - 8)
                     y = np.random.randint(0, patch_combined.shape[2] - 8)
                     patch_combined[:, x:x+8, y:y+8] = 0
+
+            # Random zoom
+            if np.random.rand() < 0.3:
+                zoom_factor = np.random.uniform(0.9, 1.1)  # zoom in/out by ±10%
+                zoomed = []
+                for c in range(patch_combined.shape[0]):
+                    z = scipy_zoom(patch_combined[c], zoom_factor, order=1)
+                    # Crop or pad to original size
+                    diff = z.shape[0] - patch_combined.shape[1]
+                    if diff > 0:
+                        z = z[diff//2 : diff//2 + patch_combined.shape[1]]
+                    else:
+                        pad = (-diff) // 2
+                        z = np.pad(z, ((pad, patch_combined.shape[1] - z.shape[0] - pad)), mode='constant')
+                    zoomed.append(z)
+                patch_combined = np.stack(zoomed, axis=0)
+
+            # Random shear
+            if np.random.rand() < 0.3:
+                shear_deg = np.random.uniform(-10, 10)  # max ±10 graden
+                transform = AffineTransform(shear=np.deg2rad(shear_deg))
+                sheared = []
+                for c in range(patch_combined.shape[0]):
+                    sheared_slice = warp(patch_combined[c], transform, mode='edge', preserve_range=True)
+                    sheared.append(sheared_slice.astype(np.float32))
+                patch_combined = np.stack(sheared, axis=0)
 
 
         # Augmentations on 3D
