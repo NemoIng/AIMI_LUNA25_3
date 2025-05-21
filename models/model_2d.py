@@ -48,7 +48,7 @@ class ResNet34_exp(nn.Module):
         # Replace the fully connected layer with a custom classification layer
         num_features = self.resnet34.fc.in_features
         self.resnet34.fc = nn.Sequential(
-            nn.BatchNorm1d(num_features) if self.batchnorm else nn.Identity(),
+            nn.BatchNorm1d(256) if self.batchnorm else nn.Identity(),
             nn.Linear(num_features, 256),
             nn.ReLU(),
             nn.Dropout(p=self.dropout[0]),
