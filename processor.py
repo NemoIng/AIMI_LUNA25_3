@@ -6,7 +6,6 @@ import dataloader
 import torch
 import torch.nn as nn
 from torchvision import models
-from models.model_3d import I3D
 from models.model_2d import ResNet34
 import os
 import math
@@ -39,9 +38,7 @@ class MalignancyProcessor:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if self.mode == "2D":
             self.model_2d = ResNet34(weights=None).to(device)
-        elif self.mode == "3D":
-            self.model_3d = I3D(num_classes=1, pre_trained=False, input_channels=3).to(device)
-
+        
         self.model_root = "/opt/app/results/"
 
     def define_inputs(self, image, header, coords):
@@ -101,6 +98,8 @@ class MalignancyProcessor:
         nodules = np.array(nodules)
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         nodules = torch.from_numpy(nodules).to(device)
+        if nodules.ndim == 5 and nodules.shape[2] == 1:
+            nodules = nodules.squeeze(2)  # van [B, C, 1, H, W] → [B, C, H, W]
 
         ckpt = torch.load(
             os.path.join(self.model_root, self.model_name, "best_metric_model.pth"),
