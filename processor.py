@@ -6,7 +6,7 @@ import dataloader
 import torch
 import torch.nn as nn
 from torchvision import models
-from models.model_3d import I3D
+from Nemo_AIMI.AIMI_LUNA25_3.models.model_3d_resnet import I3D
 from models.model_2d import ResNet34
 import os
 import math

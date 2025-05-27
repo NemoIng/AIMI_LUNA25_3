@@ -3,8 +3,8 @@
 #SBATCH --account=csedui00041
 #SBATCH --mem=10G
 #SBATCH --time=6:00:00
-#SBATCH --output=./logs/2d_%j.out
-#SBATCH --error=./logs/2d_%j.err
+#SBATCH --output=./logs/test/%j.out
+#SBATCH --error=./logs/test/%j.err
 #SBATCH --mail-user=ningendaa
 #SBATCH --mail-type=END,FAIL
 

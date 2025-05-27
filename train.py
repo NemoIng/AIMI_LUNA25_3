@@ -92,7 +92,7 @@ def train(
         size_mm=config.SIZE_MM,
         size_px=config.SIZE_PX,
         augmentations=config.AUGMENTATIONS,
-        aug_settings=config.AUG_SETTINS
+        aug_settings=config.AUG_SETTINGS
     )
 
     valid_loader = get_data_loader(
@@ -106,7 +106,7 @@ def train(
         size_mm=config.SIZE_MM,
         size_px=config.SIZE_PX,
         augmentations=False,
-        aug_settings=config.AUG_SETTINS,
+        aug_settings=config.AUG_SETTINGS,
     )
 
     # start a typical PyTorch training
@@ -272,7 +272,9 @@ if __name__ == "__main__":
     logging.info(f"Loss function: {config.loss_function}")
     logging.info(f"Alpha: {config.alpha}")
     logging.info(f"Gamma: {config.gamma}")
-    logging.info(f"Dice weight: {config.dice_weight}\n")
+    
+    if config.MODE != "2D":
+        logging.info(f"3D model: {config.MODEL_3D}")
     
     model_str_lines = str(config.model).splitlines()
     # Print the last few lines

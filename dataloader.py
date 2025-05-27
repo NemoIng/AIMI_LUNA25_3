@@ -579,7 +579,7 @@ def test():
         size_mm=config.SIZE_MM,
         rotations=config.ROTATION,
         translations=config.TRANSLATION,
-        augmentations=config.AUG_SETTINS,
+        augmentations=config.AUG_SETTINGS,
     )
 
     for i, data in enumerate(train_loader):

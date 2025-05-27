@@ -3,7 +3,7 @@ import ComboLoss
 import torch
 
 from models.model_2d import ResNet34, ResNet34_exp
-from models.model_3d import I3D
+from Nemo_AIMI.AIMI_LUNA25_3.models.model_3d_resnet import I3D
 
 class Configuration(object):
     def __init__(self) -> None:

@@ -6,3 +6,4 @@ results/
 *.tar.gz
 __pycache__/
 aimi_group03.egg-info/
+backup/
