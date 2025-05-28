@@ -251,6 +251,6 @@ def _show_torch_cuda_info():
 
 if __name__ == "__main__":
     mode = "3D"
-    model_name = "LUNA25-3D-lowLR-highWD-noDice-rot=90-3D-20250507"
+    model_name = "luna25-3d-no-dropout-morerotation-20250522"
     raise SystemExit(run(mode= mode,
                          model_name=model_name))

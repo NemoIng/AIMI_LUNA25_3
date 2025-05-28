@@ -2,7 +2,7 @@
 # Stop at first error
 # set -e
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-DOCKER_IMAGE_TAG="luna25-resnet34"
+DOCKER_IMAGE_TAG="luna25-3d-no-dropout-morerotation-20250522"
 
 
 # Check if an argument is provided
