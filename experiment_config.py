@@ -30,9 +30,9 @@ class Configuration(object):
             
         # self.EXPERIMENT_NAME = "LUNA25-3D-Combo" # Name of the experiment
         # self.MODE = "3D" # 2D or 3D
-        self.EXPERIMENT_NAME = "aug_run1" # Name of the experiment
-        self.MODE = "2D"
-        self.MODEL_3D = "3DRes" # 3D model to use: I3D, 3DRes, or 3DRes
+        self.EXPERIMENT_NAME = "resnet_focalNoDice_drop0.2" # Name of the experiment
+        self.MODE = "3D"
+        self.MODEL_3D = "3DDense" # 3D model to use: I3D, 3DDense, or 3DRes
 
         self.EXPERIMENT_NAME = f"{self.MODE}_{self.EXPERIMENT_NAME}"
         
@@ -64,11 +64,11 @@ class Configuration(object):
         self.WEIGHT_DECAY = 5e-3
  
         # Other parameters
-        self.DROPOUT = 0.0
+        self.DROPOUT = 0.2
         self.BATCHNORM = False
         self.CROSS_VALIDATION = False
         self.CROSS_VALIDATION_FOLDS = 5
-       
+
         self.AUGMENTATIONS = True
         self.AUG_SETTINGS = {
             # 2D

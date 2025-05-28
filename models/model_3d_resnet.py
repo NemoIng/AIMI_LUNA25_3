@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.models.video import r3d_18
 
-
 class ResNet3D(nn.Module):
     def __init__(self, num_classes, input_channels=3, pretrained=True, freeze_bn=False, dropout=[0.0, 0.0]):
         super(ResNet3D, self).__init__()
