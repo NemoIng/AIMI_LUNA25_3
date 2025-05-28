@@ -30,23 +30,23 @@ class Configuration(object):
             
         # self.EXPERIMENT_NAME = "LUNA25-3D-Combo" # Name of the experiment
         # self.MODE = "3D" # 2D or 3D
-        self.EXPERIMENT_NAME = "resnet_FocalBCE_lowAlpha" # Name of the experiment
-        self.MODE = "3D"
+        self.EXPERIMENT_NAME = "aug_run1" # Name of the experiment
+        self.MODE = "2D"
         self.MODEL_3D = "3DRes" # 3D model to use: I3D, 3DRes, or 3DRes
 
         self.EXPERIMENT_NAME = f"{self.MODE}_{self.EXPERIMENT_NAME}"
         
-        # self.alpha = 0.3
-        # self.gamma = 2.0
-        # self.loss_function = ComboLoss.ComboLoss(alpha=self.alpha, gamma=self.gamma, dice_weight=0.0).to(self.device)
+        self.alpha = 0.3
+        self.gamma = 2.0
+        self.loss_function = ComboLoss(alpha=self.alpha, gamma=self.gamma, dice_weight=0.0).to(self.device)
         
         # self.alpha = 0.7
         # self.gamma = 0.75
         # self.loss_function = AFTLoss(alpha=self.alpha, beta=0.3, gamma=self.gamma).to(self.device)
 
-        self.alpha=0.1
-        self.gamma=2.0
-        self.loss_function = FocalLossBCE(alpha=self.alpha, gamma=self.gamma)
+        # self.alpha=0.1
+        # self.gamma=2.0
+        # self.loss_function = FocalLossBCE(alpha=self.alpha, gamma=self.gamma)
         
         # Training parameters
         self.SEED = 2025
@@ -54,10 +54,10 @@ class Configuration(object):
         self.SIZE_MM = 50
         self.SIZE_PX = 64
         self.BATCH_SIZE = 32
-        # self.ROTATION = ((-90, 90), (-90, 90), (-90, 90))
-        self.ROTATION = ((-180, 180), (-180, 180), (-180, 180))
+        self.ROTATION = ((-90, 90), (-90, 90), (-90, 90))
+        # self.ROTATION = ((-180, 180), (-180, 180), (-180, 180))
         self.TRANSLATION = True
-        self.EPOCHS = 50
+        self.EPOCHS = 40
         self.PATIENCE = 10
         self.PATCH_SIZE = [64, 128, 128]
         self.LEARNING_RATE = 2e-5
@@ -72,13 +72,13 @@ class Configuration(object):
         self.AUGMENTATIONS = True
         self.AUG_SETTINGS = {
             # 2D
-            "horizontal_flip": 0.5,
-            "rotation_90": 0.5,
-            "brightness_shift": 0.3,
-            "gaussian_noise": 0.3,
-            "coarse_dropout": 0.3,
-            "zoom": 0.3,
-            "shear": 0.3,
+            "horizontal_flip": 0.,
+            "rotation_90": 0.,
+            "brightness_shift": 0.,
+            "gaussian_noise": 0.5,
+            "coarse_dropout": 0.5,
+            "zoom": 0.,
+            "shear": 0.,
             # 3D
             "flip_x": 0.5,
             "flip_y": 0.5,
