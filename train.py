@@ -16,11 +16,14 @@ from datetime import datetime
 import shutil
 from sklearn.metrics import confusion_matrix
 import scipy.stats as st
+from sklearn.metrics import roc_auc_score, roc_curve
+import sys
 
 torch.backends.cudnn.benchmark = True
 
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
+    stream=sys.stdout,
     format="[%(levelname)s][%(asctime)s] %(message)s",
     datefmt="%I:%M:%S",
 )
@@ -38,6 +41,78 @@ def make_weights_for_balanced_classes(labels):
     for label in labels:
         weights.append(n_samples / float(cnt_dict[label]))
     return weights
+
+
+def calculate_auc(y_true, y_pred):
+    auc = roc_auc_score(y_true, y_pred)
+
+    # Bootstrapping for 95% confidence intervals
+    n_bootstraps = 1000
+    rng = np.random.RandomState(seed=42)
+    bootstrapped_aucs = []
+
+    for _ in range(n_bootstraps):
+        # Resample the data
+        indices = rng.choice(len(y_true), len(y_true), replace=True)
+        if len(np.unique(y_true[indices])) < 2:
+            # Skip this resample if only one class is present
+            continue
+        score = roc_auc_score(y_true[indices], y_pred[indices])
+        bootstrapped_aucs.append(score)
+
+    # Calculate the confidence intervals
+    ci_lower = np.percentile(bootstrapped_aucs, 2.5)
+    ci_upper = np.percentile(bootstrapped_aucs, 97.5)
+
+    return {"auc": auc, "ci_lower": ci_lower, "ci_upper": ci_upper}
+
+def calculate_sensitivity(y_true, y_pred):
+    """
+    Computes the sensitivity (recall) at 95% specificity for a classifier.
+    
+    Parameters:
+        y_true (array-like): Ground truth binary labels (0 = benign, 1 = malignant).
+        y_pred (array-like): Predicted probability scores from the classifier.
+
+    Returns:
+        float: Sensitivity (recall) at 95% specificity.
+        float: Decision threshold used to achieve 95% specificity.
+    """
+    # Compute ROC curve
+    fpr, tpr, thresholds = roc_curve(y_true, y_pred)
+    
+    # Find the threshold corresponding to 95% specificity (FPR = 1 - specificity)
+    target_fpr = 1 - 0.95  # 5% false positive rate
+    idx = np.where(fpr <= target_fpr)[0][-1]  # Get the last index where FPR <= 5%
+    
+    # Extract sensitivity (TPR) and threshold
+    sensitivity = tpr[idx]
+
+    return {"sensitivity": sensitivity}
+
+def calculate_specificity(y_true, y_pred):
+    """
+    Computes the specificity at 95% sensitivity for a classifier.
+    
+    Parameters:
+        y_true (array-like): Ground truth binary labels (0 = benign, 1 = malignant).
+        y_pred (array-like): Predicted probability scores from the classifier.
+
+    Returns:
+        float: Specificity at 95% sensitivity.
+        float: Decision threshold used to achieve 95% sensitivity.
+    """
+    # Compute ROC curve
+    fpr, tpr, thresholds = roc_curve(y_true, y_pred)
+    
+    # Find the threshold corresponding to 95% sensitivity (TPR = 0.95)
+    target_tpr = 0.95  # Sensitivity (TPR) threshold
+    idx = np.where(tpr >= target_tpr)[0][0]  # Get first index where TPR >= 95%
+    
+    # Extract specificity (1 - FPR) and threshold
+    specificity = 1 - fpr[idx]
+    
+    return {"specificity": specificity}
 
 
 def train(
@@ -189,6 +264,12 @@ def train(
             fpr, tpr, _ = metrics.roc_curve(y, y_pred)
             auc_metric = metrics.auc(fpr, tpr)
 
+            auc_nums = calculate_auc(y, y_pred)
+
+            auc_metric = auc_nums["auc"]
+            auc_ci_low = auc_nums["ci_lower"]
+            auc_ci_high = auc_nums["ci_upper"]
+
             # AUC 95% CI via DeLong method approximation
             def auc_ci(y_true, y_scores, alpha=0.95):
                 n = len(y_scores)
@@ -201,7 +282,7 @@ def train(
                 upper = min(1.0, auc + z * se)
                 return lower, upper
 
-            auc_ci_low, auc_ci_high = auc_ci(y, y_pred)
+            # auc_ci_low, auc_ci_high = auc_ci(y, y_pred)
 
             y_true_binary = y.astype(int)
 
@@ -214,8 +295,11 @@ def train(
 
             tn, fp, fn, tp = confusion_matrix(y_true_binary, y_pred_binary).ravel()
 
-            sensitivity = tp / (tp + fn) if (tp + fn) > 0 else 0.0
-            specificity = tn / (tn + fp) if (tn + fp) > 0 else 0.0
+            # sensitivity = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+            # specificity = tn / (tn + fp) if (tn + fp) > 0 else 0.0
+
+            sensitivity = calculate_sensitivity(y, y_pred)["sensitivity"]
+            specificity = calculate_specificity(y, y_pred)["specificity"]
 
             if auc_metric > best_metric:
 
