@@ -1,12 +1,15 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchvision.models.video import r3d_18
+from torchvision.models.video import r3d_18, R3D_18_Weights
 
 class ResNet3D(nn.Module):
     def __init__(self, num_classes, input_channels=3, pretrained=True, freeze_bn=False, dropout=[0.0, 0.0]):
         super(ResNet3D, self).__init__()
-        self.model = r3d_18(pretrained=pretrained)
+        if pretrained:
+            self.model = r3d_18(weights=R3D_18_Weights.KINETICS400_V1)
+        else:
+            self.model = r3d_18()
 
         # Modify the first conv layer to accept custom input channels
         if input_channels != 3:

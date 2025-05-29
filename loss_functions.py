@@ -15,22 +15,6 @@ class ComboLoss(nn.Module):
         dice = 1 - (2 * (probs * targets).sum() + smooth) / ((probs + targets).sum() + smooth)
         return (1 - self.dice_weight) * self.focal(inputs, targets) + self.dice_weight * dice
 
-class FocalLossBCE(nn.Module):
-    def __init__(self, alpha=0.25, gamma=2.0, reduction='mean'):
-        super().__init__()
-        self.alpha = alpha
-        self.gamma = gamma
-        self.reduction = reduction
-
-    def forward(self, logits, targets):
-        BCE_loss = F.binary_cross_entropy_with_logits(logits, targets, reduction='none')
-        probs = torch.sigmoid(logits)
-        pt = torch.where(targets == 1, probs, 1 - probs)
-        focal_term = (1 - pt) ** self.gamma
-        loss = self.alpha * focal_term * BCE_loss
-
-        return loss.mean() if self.reduction == 'mean' else loss
-
 class AsymmetricFocalTverskyLoss(nn.Module):
     def __init__(self, alpha=0.7, beta=0.3, gamma=0.75, smooth=1e-6):
         super().__init__()

@@ -1,5 +1,6 @@
 from pathlib import Path
-from loss_functions import ComboLoss, AsymmetricFocalTverskyLoss as AFTLoss, FocalLossBCE
+from loss_functions import ComboLoss, AsymmetricFocalTverskyLoss as AFTLoss
+from FocalLoss import FocalLoss
 import torch
 
 from models.model_2d import ResNet34, ResNet34_exp
@@ -30,19 +31,19 @@ class Configuration(object):
             
         # self.EXPERIMENT_NAME = "LUNA25-3D-Combo" # Name of the experiment
         # self.MODE = "3D" # 2D or 3D
-        self.EXPERIMENT_NAME = "resnet_focalNoDice_drop0.2" # Name of the experiment
+        self.EXPERIMENT_NAME = "dense_Combo_0.3Dice_0.2Alpha_2.0Gamma" # Name of the experiment
         self.MODE = "3D"
         self.MODEL_3D = "3DDense" # 3D model to use: I3D, 3DDense, or 3DRes
 
         self.EXPERIMENT_NAME = f"{self.MODE}_{self.EXPERIMENT_NAME}"
         
-        self.alpha = 0.3
+        self.alpha = 0.2
         self.gamma = 2.0
-        self.loss_function = ComboLoss(alpha=self.alpha, gamma=self.gamma, dice_weight=0.0).to(self.device)
+        self.loss_function = ComboLoss(alpha=self.alpha, gamma=self.gamma, dice_weight=0.3).to(self.device)
         
-        # self.alpha = 0.7
-        # self.gamma = 0.75
-        # self.loss_function = AFTLoss(alpha=self.alpha, beta=0.3, gamma=self.gamma).to(self.device)
+        # self.alpha = 0.5  
+        # self.gamma = 0.8  
+        # self.loss_function = AFTLoss(alpha=self.alpha, beta=0.5, gamma=self.gamma).to(self.device)
 
         # self.alpha=0.1
         # self.gamma=2.0
@@ -57,14 +58,14 @@ class Configuration(object):
         # self.ROTATION = ((-90, 90), (-90, 90), (-90, 90))
         self.ROTATION = ((-180, 180), (-180, 180), (-180, 180))
         self.TRANSLATION = True
-        self.EPOCHS = 50
-        self.PATIENCE = 10
+        self.EPOCHS = 30
+        self.PATIENCE = 7
         self.PATCH_SIZE = [64, 128, 128]
         self.LEARNING_RATE = 2e-5
         self.WEIGHT_DECAY = 5e-3
  
         # Other parameters
-        self.DROPOUT = 0.2
+        self.DROPOUT = 0.0
         self.BATCHNORM = False
         self.CROSS_VALIDATION = False
         self.CROSS_VALIDATION_FOLDS = 5
@@ -119,8 +120,8 @@ class Configuration(object):
             weight_decay=self.WEIGHT_DECAY,
         )
 
-        self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-            self.optimizer, T_max=self.EPOCHS
+        self.scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
+            self.optimizer, T_0=10, T_mult=2
         )
 
 config = Configuration()
