@@ -17,11 +17,13 @@ import shutil
 from sklearn.metrics import confusion_matrix
 import scipy.stats as st
 from sklearn.metrics import roc_auc_score, roc_curve
+import sys
 
 torch.backends.cudnn.benchmark = True
 
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
+    stream=sys.stdout,
     format="[%(levelname)s][%(asctime)s] %(message)s",
     datefmt="%I:%M:%S",
 )
