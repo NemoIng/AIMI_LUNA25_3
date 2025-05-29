@@ -298,9 +298,12 @@ def train(
         logging.info(
             "epoch {} average train loss: {:.4f}".format(epoch + 1, epoch_loss)
         )
+        config.scheduler.step()
+        for param_group in config.optimizer.param_groups:
+            logging.info(f"Learning rate: {param_group['lr']}")
 
+        
         # validate
-
         config.model.eval()
 
         epoch_loss = 0
