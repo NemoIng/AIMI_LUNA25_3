@@ -29,33 +29,23 @@ class Configuration(object):
         if not self.EXPERIMENT_DIR.exists():
             self.EXPERIMENT_DIR.mkdir(parents=True)
             
-        # self.EXPERIMENT_NAME = "LUNA25-3D-Combo" # Name of the experiment
-        # self.MODE = "3D" # 2D or 3D
         self.EXPERIMENT_NAME = "dense_Combo_0.3Dice_0.2Alpha_2.0Gamma" # Name of the experiment
         self.MODE = "3D"
-        self.MODEL_3D = "3DDense" # 3D model to use: I3D, 3DDense, or 3DRes
+        self.MODEL_3D = "3DRes" # 3D model to use: I3D, 3DRes, or 3DDense
 
         self.EXPERIMENT_NAME = f"{self.MODE}_{self.EXPERIMENT_NAME}"
         
         self.alpha = 0.2
         self.gamma = 2.0
-        self.loss_function = ComboLoss(alpha=self.alpha, gamma=self.gamma, dice_weight=0.3).to(self.device)
-        
-        # self.alpha = 0.5  
-        # self.gamma = 0.8  
-        # self.loss_function = AFTLoss(alpha=self.alpha, beta=0.5, gamma=self.gamma).to(self.device)
+        self.dice_weight = 0.3
+        self.loss_function = ComboLoss(alpha=self.alpha, gamma=self.gamma, dice_weight=self.dice_weight).to(self.device)
 
-        # self.alpha=0.1
-        # self.gamma=2.0
-        # self.loss_function = FocalLossBCE(alpha=self.alpha, gamma=self.gamma)
-        
         # Training parameters
         self.SEED = 2025
         self.NUM_WORKERS = 2
         self.SIZE_MM = 50
         self.SIZE_PX = 64
         self.BATCH_SIZE = 32
-        # self.ROTATION = ((-90, 90), (-90, 90), (-90, 90))
         self.ROTATION = ((-180, 180), (-180, 180), (-180, 180))
         self.TRANSLATION = True
         self.EPOCHS = 30
@@ -65,7 +55,7 @@ class Configuration(object):
         self.WEIGHT_DECAY = 5e-3
  
         # Other parameters
-        self.DROPOUT = 0.0
+        self.DROPOUT = [0.0, 0.0]
         self.BATCHNORM = False
         self.CROSS_VALIDATION = False
         self.CROSS_VALIDATION_FOLDS = 5
@@ -108,12 +98,20 @@ class Configuration(object):
                 freeze_bn=False,
             ).to(self.device)
         elif self.MODE == '3D' and self.MODEL_3D == "3DRes":
-            self.model = ResNet3D(num_classes=1, input_channels=3, pretrained=True, 
-                                  freeze_bn=False, dropout=self.DROPOUT).to(self.device)
+            self.model = ResNet3D(
+                num_classes=1,
+                input_channels=3,
+                pretrained=True,
+                freeze_bn=False,
+                dropout=self.DROPOUT
+            ).to(self.device)
         elif self.MODE == '3D' and self.MODEL_3D == "3DDense":
-            self.model = DenseNet3D(num_classes=1, input_channels=3,
-                dropout=self.DROPOUT).to(self.device)
-                                           
+            self.model = DenseNet3D(
+                num_classes=1,
+                input_channels=3,
+                dropout=self.DROPOUT
+            ).to(self.device)
+                                   
         self.optimizer = torch.optim.AdamW(
             self.model.parameters(),
             lr=self.LEARNING_RATE,

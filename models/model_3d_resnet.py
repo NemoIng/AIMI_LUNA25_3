@@ -9,19 +9,19 @@ class ResNet3D(nn.Module):
         if pretrained:
             self.model = r3d_18(weights=R3D_18_Weights.KINETICS400_V1)
         else:
-            self.model = r3d_18()
+            self.model = r3d_18(weights=None)
 
         # Modify the first conv layer to accept custom input channels
         if input_channels != 3:
             self.model.stem[0] = nn.Conv3d(input_channels, 64, kernel_size=(3, 7, 7), 
-                                           stride=(1, 2, 2), padding=(1, 3, 3), bias=False)
+                                       stride=(1, 2, 2), padding=(1, 3, 3), bias=False)
 
         # Replace the final classification layer
-        if dropout > 0:
+        if any(d > 0 for d in dropout):
             self.model.fc = nn.Sequential(
                 nn.Linear(self.model.fc.in_features, 256),
                 nn.ReLU(),
-                nn.Dropout(p=dropout),
+                nn.Dropout(p=dropout[0] if len(dropout) > 0 else 0.0),
                 nn.Linear(256, 1)
             )
         else:
