@@ -6,7 +6,7 @@ import dataloader
 import torch
 import torch.nn as nn
 from torchvision import models
-from Nemo_AIMI.AIMI_LUNA25_3.models.model_3d_resnet import I3D
+from models.model_3d_resnet import ResNet3D
 from models.model_2d import ResNet34
 import os
 import math
@@ -40,7 +40,7 @@ class MalignancyProcessor:
         if self.mode == "2D":
             self.model_2d = ResNet34(weights=None).to(device)
         elif self.mode == "3D":
-            self.model_3d = I3D(num_classes=1, pre_trained=False, input_channels=3).to(device)
+            self.model_3d = ResNet3D(num_classes=1, input_channels=3, pretrained=False).to(device)
 
         self.model_root = "/opt/app/results/"
 
@@ -107,7 +107,17 @@ class MalignancyProcessor:
             map_location=torch.device("cpu")
         )
 
-        model.load_state_dict(ckpt)
+        # Hernoem keys van backbone.* naar model.*
+        new_ckpt = {}
+        for k, v in ckpt.items():
+            if k.startswith("backbone."):
+                new_key = k.replace("backbone.", "model.")
+                new_ckpt[new_key] = v
+            else:
+                new_ckpt[k] = v
+
+        model.load_state_dict(new_ckpt, strict=False)
+
         model.eval()
 
         # Convert grayscale (1-channel) input to 3-channel if needed
