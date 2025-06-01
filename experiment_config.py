@@ -11,7 +11,6 @@ from models.model_3d_densenet import DenseNet3D
 class Configuration(object):
     def __init__(self) -> None:
         self.device = torch.device(f"cuda:0" if torch.cuda.is_available() else "cpu")
-        self.device = torch.device("mps") if torch.mps.is_available() else self.device
 
         # Working directory
         self.WORKDIR = Path(".")
@@ -30,10 +29,8 @@ class Configuration(object):
         if not self.EXPERIMENT_DIR.exists():
             self.EXPERIMENT_DIR.mkdir(parents=True)
             
-        # self.EXPERIMENT_NAME = "LUNA25-3D-Combo" # Name of the experiment
-        # self.MODE = "3D" # 2D or 3D
         self.EXPERIMENT_NAME = "3d_scheduler_test" # Name of the experiment
-        self.MODE = "3D"
+        self.MODE = "3D" # 2D or 3D
         self.MODEL_3D = "3DRes" # 3D model to use: I3D, 3DRes, or 3DRes
 
         self.EXPERIMENT_NAME = f"{self.MODE}_{self.EXPERIMENT_NAME}"
@@ -42,21 +39,13 @@ class Configuration(object):
         self.gamma = 2.0
         self.loss_function = ComboLoss(alpha=self.alpha, gamma=self.gamma, dice_weight=0.3).to(self.device)
         
-        # self.alpha = 0.7
-        # self.gamma = 0.75
-        # self.loss_function = AFTLoss(alpha=self.alpha, beta=0.3, gamma=self.gamma).to(self.device)
-
-        # self.alpha=0.1
-        # self.gamma=2.0
-        # self.loss_function = FocalLossBCE(alpha=self.alpha, gamma=self.gamma)
-        
         # Training parameters
         self.SEED = 2025
         self.NUM_WORKERS = 2
         self.SIZE_MM = 50
         self.SIZE_PX = 64
         self.BATCH_SIZE = 32
-        # self.ROTATION = ((-90, 90), (-90, 90), (-90, 90))
+
         self.ROTATION = ((-180, 180), (-180, 180), (-180, 180))
         self.TRANSLATION = True
         self.EPOCHS = 35
@@ -92,6 +81,7 @@ class Configuration(object):
         
         # Path to the folder containing the CSVs for training and validation.
         self.CSV_DIR = Path("dataset_csv") if not self.CROSS_VALIDATION else Path("dataset_csv/cross_validation")
+        
         # We provide an NLST dataset CSV, but participants are responsible for splitting the data into training and validation sets.
         self.CSV_DIR_TRAIN = self.CSV_DIR / "train.csv" # Path to the training CSV
         self.CSV_DIR_VALID = self.CSV_DIR / "valid.csv" # Path to the validation CSV
