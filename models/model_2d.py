@@ -18,11 +18,16 @@ class ResNet34Base(nn.Module):
         return self.resnet34(x)
 
 class ResNet34(nn.Module):
+    def __init__(self, num_classes=1, weights='IMAGENET1K_V1', dropout=0.3):
     def __init__(self, num_classes=1, weights='IMAGENET1K_V1', dropout=[0.3]):
         super(ResNet34, self).__init__()
         self.resnet34 = models.resnet34(weights=None)
         num_features = self.resnet34.fc.in_features
         self.resnet34.fc = nn.Sequential(
+            nn.Linear(num_features, 256),
+            nn.ReLU(),
+            nn.Dropout(p=self.dropout),
+            nn.Linear(256, 1)
             nn.Identity(),               # fc.0 → dummy om de index te schuiven
             nn.Linear(num_features, 256),# fc.1
             nn.ReLU(),                   # fc.2
@@ -31,12 +36,13 @@ class ResNet34(nn.Module):
         )
 
 
+
     def forward(self, x):
         return self.resnet34(x)
 
 
 class ResNet34_exp(nn.Module):
-    def __init__(self, num_classes=1, weights='IMAGENET1K_V1', dropout=[0.3], batchnorm=True):
+    def __init__(self, num_classes=1, weights='IMAGENET1K_V1', dropout=0.3, batchnorm=True):
         super(ResNet34_exp, self).__init__()
         # Load pretrained ResNet34
         self.resnet34 = models.resnet34(weights=None)
@@ -47,8 +53,9 @@ class ResNet34_exp(nn.Module):
         num_features = self.resnet34.fc.in_features
         self.resnet34.fc = nn.Sequential(
             nn.Linear(num_features, 256),
+            nn.BatchNorm1d(256) if self.batchnorm else nn.Identity(),
             nn.ReLU(),
-            nn.Dropout(p=self.dropout[0]),
+            nn.Dropout(p=self.dropout),
             nn.Linear(256, 1)
         )
 

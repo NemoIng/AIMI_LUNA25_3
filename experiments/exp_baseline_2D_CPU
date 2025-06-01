@@ -3,10 +3,8 @@
 #SBATCH --account=csedui00041
 #SBATCH --mem=10G
 #SBATCH --time=6:00:00
-#SBATCH --output=./logs/2d_%j.out
-#SBATCH --error=./logs/2d_%j.err
-#SBATCH --mail-user=ningendaa
-#SBATCH --mail-type=END,FAIL
+#SBATCH --output=./logs/2d/%j.out
+#SBATCH --error=./logs/2d/%j.err
 
 # execute train CLI
 source venv/bin/activate

@@ -1,4 +1,3 @@
-
 from pathlib import Path
 import numpy as np
 import torch
@@ -8,8 +7,10 @@ import numpy.linalg as npl
 import scipy.ndimage as ndi
 from experiment_config import config
 import pandas as pd
-from scipy.ndimage import zoom as scipy_zoom
-from skimage.transform import AffineTransform, warp
+from scipy.ndimage import zoom as scipy_zoom, affine_transform
+import torchvision.transforms.functional as TF
+# from skimage.transform import AffineTransform, warp
+
 
 def _calculateAllPermutations(itemList):
     if len(itemList) == 1:
@@ -217,6 +218,8 @@ class CTCaseDataset(data.Dataset):
         size_px: int = 64,
         size_mm: int = 50,
         mode: str = "2D",
+        augmentations: bool = False,
+        aug_settings: dict = None,
     ):
 
         self.data_dir = Path(data_dir)
@@ -227,6 +230,8 @@ class CTCaseDataset(data.Dataset):
         self.size_px = size_px
         self.size_mm = size_mm
         self.mode = mode
+        self.augmentations = augmentations
+        self.aug_settings = aug_settings
 
 
     def __getitem__(self, idx):  # caseid, z, y, x, label, radius
@@ -290,31 +295,31 @@ class CTCaseDataset(data.Dataset):
         if patch_combined.shape[1] == 1:
             patch_combined = patch_combined.squeeze(1)  # Verwijder alleen als dim=1
 
-        # Augmentations on 2D
-        if self.mode == "2D":
+              # Augmentations on 2D
+        if self.mode == "2D" and self.augmentations:
 
-            if np.random.rand() < config.AUGMENTATIONS["horizontal_flip"]:
+            if np.random.rand() < self.aug_settings["horizontal_flip"]:
                 patch_combined = patch_combined[:, :, ::-1].copy()
 
-            if np.random.rand() < config.AUGMENTATIONS["rotation_90"]:
+            if np.random.rand() < self.aug_settings["rotation_90"]:
                 k = np.random.choice([1, 2, 3])
                 patch_combined = np.rot90(patch_combined, k=k, axes=(1, 2)).copy()
 
-            if np.random.rand() < config.AUGMENTATIONS["brightness_shift"]:
+            if np.random.rand() < self.aug_settings["brightness_shift"]:
                 shift = np.random.uniform(-0.1, 0.1)
                 patch_combined = np.clip(patch_combined + shift, 0, 1)
 
-            if np.random.rand() < config.AUGMENTATIONS["gaussian_noise"]:
+            if np.random.rand() < self.aug_settings["gaussian_noise"]:
                 noise = np.random.normal(0, 0.01, size=patch_combined.shape)
                 patch_combined = np.clip(patch_combined + noise, 0, 1)
 
-            if np.random.rand() < config.AUGMENTATIONS["coarse_dropout"]:
+            if np.random.rand() < self.aug_settings["coarse_dropout"]:
                 for _ in range(np.random.randint(1, 4)):
                     x = np.random.randint(0, patch_combined.shape[1] - 8)
                     y = np.random.randint(0, patch_combined.shape[2] - 8)
                     patch_combined[:, x:x+8, y:y+8] = 0
 
-            if np.random.rand() < config.AUGMENTATIONS["zoom"]:
+            if np.random.rand() < self.aug_settings["zoom"]:
                 zoom_factor = np.random.uniform(0.9, 1.1)
                 zoomed = []
                 for c in range(patch_combined.shape[0]):
@@ -323,42 +328,58 @@ class CTCaseDataset(data.Dataset):
                     zoomed.append(z)
                 patch_combined = np.stack(zoomed, axis=0)
 
-            if np.random.rand() < config.AUGMENTATIONS["shear"]:
-                shear_deg = np.random.uniform(-10, 10)
-                transform = AffineTransform(shear=np.deg2rad(shear_deg))
+            if np.random.rand() < self.aug_settings["shear"]:
+                shear_deg = float(np.random.uniform(-10, 10))  # Must be float
                 sheared = []
                 for c in range(patch_combined.shape[0]):
-                    sheared_slice = warp(patch_combined[c], transform, mode='edge', preserve_range=True)
-                    sheared_slice = resize_to_original(sheared_slice, (patch_combined.shape[1], patch_combined.shape[2]))
-                    sheared.append(sheared_slice.astype(np.float32))
+                    # Convert to tensor, shape [H, W] -> [1, H, W]
+                    slice_tensor = torch.from_numpy(patch_combined[c]).float()
+                    if slice_tensor.max() > 1.0:
+                        slice_tensor /= 255.0
+                    slice_tensor = slice_tensor.unsqueeze(0)  # Shape: [1, H, W]
+
+                    # TF.affine expects [C, H, W]
+                    sheared_slice = TF.affine(
+                        slice_tensor,
+                        angle=0.0,                  # No rotation
+                        translate=[0, 0],           # No translation
+                        scale=1.0,                  # No scaling
+                        shear=[shear_deg],          # Shear angle
+                        interpolation=TF.InterpolationMode.BILINEAR,
+                        fill=0
+                    )
+
+                    # Back to [H, W] and numpy
+                    sheared.append(sheared_slice.squeeze(0).numpy().astype(np.float32))
+
                 patch_combined = np.stack(sheared, axis=0)
 
 
 
         # Augmentations on 3D
-        if self.mode == "3D":
+        if self.mode == "3D" and self.augmentations:
             # patch_combined shape: [1, D, H, W]
 
             # patch_combined shape: [C, D, H, W], meestal C=1 of 3
 
-            if config.AUGMENTATIONS["flip_z"] > 0 and np.random.rand() < config.AUGMENTATIONS["flip_z"]:
+            if self.aug_settings["flip_z"] > 0 and np.random.rand() < self.aug_settings["flip_z"]:
                 patch_combined = patch_combined[:, ::-1, :, :].copy()
 
-            if config.AUGMENTATIONS["flip_y"] > 0 and np.random.rand() < config.AUGMENTATIONS["flip_y"]:
+            if self.aug_settings["flip_y"] > 0 and np.random.rand() < self.aug_settings["flip_y"]:
                 patch_combined = patch_combined[:, :, ::-1, :].copy()
 
-            if config.AUGMENTATIONS["flip_x"] > 0 and np.random.rand() < config.AUGMENTATIONS["flip_x"]:
+            if self.aug_settings["flip_x"] > 0 and np.random.rand() < self.aug_settings["flip_x"]:
                 patch_combined = patch_combined[:, :, :, ::-1].copy()
 
-            if config.AUGMENTATIONS["gaussian_noise_3d"] > 0 and np.random.rand() < config.AUGMENTATIONS["gaussian_noise_3d"]:
+            if self.aug_settings["gaussian_noise_3d"] > 0 and np.random.rand() < self.aug_settings["gaussian_noise_3d"]:
                 noise = np.random.normal(0, 0.01, size=patch_combined.shape)
                 patch_combined = np.clip(patch_combined + noise, 0, 1)
 
-            if config.AUGMENTATIONS["brightness_shift_3d"] > 0 and np.random.rand() < config.AUGMENTATIONS["brightness_shift_3d"]:
+            if self.aug_settings["brightness_shift_3d"] > 0 and np.random.rand() < self.aug_settings["brightness_shift_3d"]:
                 shift = np.random.uniform(-0.1, 0.1)
                 patch_combined = np.clip(patch_combined + shift, 0, 1)
 
-            if config.AUGMENTATIONS["coarse_dropout_3d"] > 0 and np.random.rand() < config.AUGMENTATIONS["coarse_dropout_3d"]:
+            if self.aug_settings["coarse_dropout_3d"] > 0 and np.random.rand() < self.aug_settings["coarse_dropout_3d"]:
                 for _ in range(np.random.randint(1, 3)):
                     z = np.random.randint(0, patch_combined.shape[1] - 8)
                     y = np.random.randint(0, patch_combined.shape[2] - 8)
@@ -373,8 +394,6 @@ class CTCaseDataset(data.Dataset):
             "ID": annotation_id,
         }
 
-        assert patch_combined.shape == (3, self.size_px, self.size_px), f"Shape mismatch: {patch_combined.shape}"
-
         return sample
 
     def __len__(self):
@@ -385,7 +404,6 @@ class CTCaseDataset(data.Dataset):
         fmt_str += "    Number of datapoints: {}\n".format(self.__len__())
         return fmt_str
     
-
 def resize_to_original(img, target_shape):
     """Crop or pad img to match target_shape (H, W)."""
     H, W = target_shape
@@ -511,6 +529,8 @@ def get_data_loader(
     size_mm=70,
     rotations=None,
     translations=None,
+    augmentations=False,
+    aug_settings=None,
 ):
 
     data_set = CTCaseDataset(
@@ -521,6 +541,8 @@ def get_data_loader(
         size_mm=size_mm,
         size_px=size_px,
         mode=mode,
+        augmentations=augmentations,
+        aug_settings=aug_settings,
     )
 
     shuffle = False
@@ -557,6 +579,7 @@ def test():
         size_mm=config.SIZE_MM,
         rotations=config.ROTATION,
         translations=config.TRANSLATION,
+        augmentations=config.AUG_SETTINGS,
     )
 
     for i, data in enumerate(train_loader):
